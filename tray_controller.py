@@ -1,43 +1,38 @@
-"""System tray icon and context menu.
-
-Provides the Windows equivalent of the macOS menu bar icon.
-Uses pystray for the system tray integration and Pillow for
-icon rendering.
-"""
+"""System tray icon and context menu."""
 
 import logging
-import threading
 from PIL import Image, ImageDraw
 
 logger = logging.getLogger("SimpleDictation.tray")
 
 
 def _create_icon_image(recording: bool = False, enabled: bool = True) -> Image.Image:
-    """Draw a 64x64 tray icon."""
     size = 64
     img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
 
+    cx, cy = size // 2, size // 2
+    r = 26
+    
     if not enabled:
-        # Gray circle with dash
-        draw.ellipse([4, 4, 60, 60], outline=(128, 128, 128, 255), width=3)
-        draw.line([20, 32, 44, 32], fill=(128, 128, 128, 255), width=3)
+        draw.ellipse([cx-r, cy-r, cx+r, cy+r], outline=(128, 128, 128, 255), width=3)
+        draw.line([cx-12, cy, cx+12, cy], fill=(128, 128, 128, 255), width=3)
     elif recording:
-        # Red filled circle
-        draw.ellipse([4, 4, 60, 60], fill=(220, 40, 40, 255))
-        # White mic shape
-        draw.rounded_rectangle([26, 16, 38, 40], radius=6, fill=(255, 255, 255, 255))
-        draw.arc([22, 28, 42, 48], start=200, end=340, fill=(255, 255, 255, 255), width=2)
-        draw.line([32, 48, 32, 52], fill=(255, 255, 255, 255), width=2)
-        draw.line([26, 52, 38, 52], fill=(255, 255, 255, 255), width=2)
+        draw.ellipse([cx-r, cy-r, cx+r, cy+r], fill=(220, 40, 40, 255))
+        mic_w, mic_h = 10, 16
+        draw.rounded_rectangle([cx-mic_w//2, cy-mic_h//2+2, cx+mic_w//2, cy+mic_h//2+2], radius=4, fill=(255, 255, 255, 255))
+        arc_box = [cx-8, cy-8, cx+8, cy+8]
+        draw.arc(arc_box, 200*16, 340*16, fill=(255, 255, 255, 255), width=2)
+        draw.line([cx, cy+mic_h//2+2, cx, cy+mic_h//2+5], fill=(255, 255, 255, 255), width=2)
+        draw.line([cx-5, cy+mic_h//2+5, cx+5, cy+mic_h//2+5], fill=(255, 255, 255, 255), width=2)
     else:
-        # Dark circle outline
-        draw.ellipse([4, 4, 60, 60], outline=(200, 200, 200, 255), width=3)
-        # Gray mic shape
-        draw.rounded_rectangle([26, 16, 38, 40], radius=6, fill=(200, 200, 200, 255))
-        draw.arc([22, 28, 42, 48], start=200, end=340, fill=(200, 200, 200, 255), width=2)
-        draw.line([32, 48, 32, 52], fill=(200, 200, 200, 255), width=2)
-        draw.line([26, 52, 38, 52], fill=(200, 200, 200, 255), width=2)
+        draw.ellipse([cx-r, cy-r, cx+r, cy+r], fill=(220, 40, 40, 255))
+        mic_w, mic_h = 10, 16
+        draw.rounded_rectangle([cx-mic_w//2, cy-mic_h//2+2, cx+mic_w//2, cy+mic_h//2+2], radius=4, fill=(255, 255, 255, 255))
+        arc_box = [cx-8, cy-8, cx+8, cy+8]
+        draw.arc(arc_box, 200*16, 340*16, fill=(255, 255, 255, 255), width=2)
+        draw.line([cx, cy+mic_h//2+2, cx, cy+mic_h//2+5], fill=(255, 255, 255, 255), width=2)
+        draw.line([cx-5, cy+mic_h//2+5, cx+5, cy+mic_h//2+5], fill=(255, 255, 255, 255), width=2)
 
     return img
 
@@ -50,7 +45,6 @@ class TrayController:
         self._enabled = True
 
     def start(self):
-        """Create and show the system tray icon. Blocks on the calling thread."""
         import pystray
         from pystray import MenuItem, Menu
 
@@ -89,7 +83,7 @@ class TrayController:
             for label, key in hotkeys:
                 hotkey_items.append(MenuItem(
                     label,
-                    lambda _, k=key: self.app.set_hotkey(k),
+                    lambda _, k=key: self.app.set_hotkey(key),
                     checked=lambda item, k=key: self.app.current_hotkey == k,
                 ))
 
@@ -97,18 +91,14 @@ class TrayController:
             for label, code in languages:
                 lang_items.append(MenuItem(
                     label,
-                    lambda _, c=code: self.app.set_language(c),
-                    checked=lambda item, c=code: self.app.current_language == c,
+                    lambda _, c=code: self.app.set_language(code),
+                    checked=lambda item, c=code: self.app.current_language == code,
                 ))
 
             return Menu(
                 MenuItem("Simple Dictation", None, enabled=False),
                 Menu.SEPARATOR,
-                MenuItem(
-                    "Status: Recording" if self._recording else "Status: Ready",
-                    None,
-                    enabled=False,
-                ),
+                MenuItem("Status: Recording" if self._recording else "Status: Ready", None, enabled=False),
                 Menu.SEPARATOR,
                 MenuItem("Engine", Menu(*engine_items)),
                 MenuItem("Hotkey", Menu(*hotkey_items)),

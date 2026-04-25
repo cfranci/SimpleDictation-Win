@@ -1,20 +1,16 @@
-"""Floating microphone overlay window.
-
-A small always-on-top pill button that shows recording state,
-audio level ring, and engine label. Equivalent to the macOS
-FloatingMicWindow. Uses PySide6 for the overlay.
-"""
+"""Floating microphone overlay window."""
 
 import logging
-import math
 from PySide6.QtWidgets import QWidget, QApplication
 from PySide6.QtCore import Qt, QPoint, QTimer, QRect
 from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QFont, QMouseEvent
 
 logger = logging.getLogger("SimpleDictation.overlay")
 
-PILL_WIDTH = 44
-PILL_HEIGHT = 58
+CIRCLE_SIZE = 52
+PILL_WIDTH = 120
+PILL_HEIGHT = 76
+BOTTOM_MARGIN = 100
 
 
 class FloatingMicOverlay(QWidget):
@@ -41,13 +37,13 @@ class FloatingMicOverlay(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setFixedSize(PILL_WIDTH, PILL_HEIGHT)
 
-        # Position top-right of primary screen
         screen = QApplication.primaryScreen()
         if screen:
             geo = screen.availableGeometry()
-            self.move(geo.right() - PILL_WIDTH - 12, geo.top() + 40)
+            x = (geo.width() - PILL_WIDTH) // 2
+            y = geo.bottom() - PILL_HEIGHT - BOTTOM_MARGIN
+            self.move(x, y)
 
-        # Audio level refresh timer
         self._level_timer = QTimer(self)
         self._level_timer.timeout.connect(self.update)
         self._level_timer.setInterval(50)
@@ -65,72 +61,90 @@ class FloatingMicOverlay(QWidget):
         self.engine_label = label
         self.update()
 
-    # ------------------------------------------------------------------
-    # Drawing
-    # ------------------------------------------------------------------
-
     def paintEvent(self, event):
         p = QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-        # Circle area (top 44x44)
-        cx, cy = PILL_WIDTH / 2, PILL_HEIGHT - 44 + 22
-        radius = 18
+        bg_color = QColor(35, 35, 35, 230)
+        p.setBrush(QBrush(bg_color))
+        p.setPen(Qt.PenStyle.NoPen)
+        p.drawRoundedRect(0, 0, PILL_WIDTH, PILL_HEIGHT, 10, 10)
 
-        # Glow ring when recording
+        cx = PILL_WIDTH // 2
+        cy = CIRCLE_SIZE // 2 + 8
+        radius = CIRCLE_SIZE // 2 - 2
+
         if self.is_recording:
             level = min(max(self.audio_level, 0), 1.0)
-            ring_width = 2.0 + 3.0 * level
+            ring_width = 2.0 + 4.0 * level
             ring_color = QColor(255, 50, 50, int(100 + 155 * level))
             pen = QPen(ring_color, ring_width)
             p.setPen(pen)
             p.setBrush(Qt.BrushStyle.NoBrush)
-            p.drawEllipse(QPoint(int(cx), int(cy)), int(radius + ring_width), int(radius + ring_width))
+            p.drawEllipse(QPoint(cx, cy), int(radius + ring_width), int(radius + ring_width))
 
-        # Main circle
-        if self.is_recording:
             p.setBrush(QBrush(QColor(220, 40, 40)))
         else:
-            p.setBrush(QBrush(QColor(40, 40, 40, 65)))
+            p.setBrush(QBrush(QColor(45, 45, 45, 200)))
         p.setPen(Qt.PenStyle.NoPen)
-        p.drawEllipse(QPoint(int(cx), int(cy)), radius, radius)
+        p.drawEllipse(QPoint(cx, cy), radius, radius)
 
-        # Mic icon
         if self.is_recording:
             mic_color = QColor(255, 255, 255)
         else:
-            mic_color = QColor(190, 190, 190, 65)
+            mic_color = QColor(200, 200, 200)
 
+        body_width, body_height = 14, 22
+        body_x = cx - body_width // 2
+        body_y = cy - body_height // 2 + 2
         p.setBrush(QBrush(mic_color))
         p.setPen(Qt.PenStyle.NoPen)
-        # Mic body
-        p.drawRoundedRect(int(cx - 4), int(cy - 1), 8, 14, 4, 4)
+        p.drawRoundedRect(int(body_x), int(body_y), body_width, body_height, 3, 3)
 
-        # Mic arc
-        pen = QPen(mic_color, 1.5)
+        arc_size = 16
+        arc_x = cx - arc_size // 2
+        arc_y = cy - body_height // 2 - 4
+        pen = QPen(mic_color, 2)
         p.setPen(pen)
         p.setBrush(Qt.BrushStyle.NoBrush)
-        arc_rect = QRect(int(cx - 7), int(cy), 14, 14)
+        arc_rect = QRect(int(arc_x), int(arc_y), arc_size, arc_size)
         p.drawArc(arc_rect, 200 * 16, 140 * 16)
 
-        # Stand
-        p.drawLine(int(cx), int(cy + 14), int(cx), int(cy + 17))
-        # Base
-        p.drawLine(int(cx - 5), int(cy + 17), int(cx + 5), int(cy + 17))
+        p.drawLine(int(cx), int(body_y + body_height), int(cx), int(body_y + body_height + 3))
+        p.drawLine(int(cx - 4), int(body_y + body_height + 3), int(cx + 4), int(body_y + body_height + 3))
 
-        # Engine label
-        label_color = QColor(220, 220, 220, 255 if self.is_recording else 65)
+        mid_y = int(PILL_HEIGHT // 2)
+
+        p.setPen(Qt.PenStyle.NoPen)
+        p.setBrush(QBrush(QColor(180, 180, 180)))
+        p.drawEllipse(QPoint(14, mid_y), 9, 9)
+        p.setBrush(Qt.BrushStyle.NoBrush)
+        p.drawLine(10, mid_y, 18, mid_y)
+
+        p.setBrush(QBrush(QColor(220, 40, 40)))
+        p.drawEllipse(QPoint(PILL_WIDTH - 14, mid_y), 9, 9)
+        p.setPen(QPen(QColor(255, 255, 255), 1.5))
+        p.drawLine(PILL_WIDTH - 17, mid_y - 3, PILL_WIDTH - 11, mid_y + 3)
+        p.drawLine(PILL_WIDTH - 17, mid_y + 3, PILL_WIDTH - 11, mid_y - 3)
+
+        label_color = QColor(220, 220, 220, 100)
         p.setPen(label_color)
-        p.setFont(QFont("Segoe UI", 7, QFont.Weight.Medium))
-        p.drawText(QRect(0, PILL_HEIGHT - 14, PILL_WIDTH, 14), Qt.AlignmentFlag.AlignCenter, self.engine_label)
+        p.setFont(QFont("Segoe UI", 7, QFont.Weight.Normal))
+        p.drawText(QRect(26, PILL_HEIGHT - 14, PILL_WIDTH - 52, 14), Qt.AlignmentFlag.AlignCenter, self.engine_label)
 
         p.end()
 
-    # ------------------------------------------------------------------
-    # Mouse handling
-    # ------------------------------------------------------------------
-
     def mousePressEvent(self, event: QMouseEvent):
+        pos = event.position().toPoint()
+        mid_y = int(PILL_HEIGHT // 2)
+
+        if abs(pos.x() - 14) < 12 and abs(pos.y() - mid_y) < 12:
+            self.hide()
+            return
+        if abs(pos.x() - (PILL_WIDTH - 14)) < 12 and abs(pos.y() - mid_y) < 12:
+            QApplication.quit()
+            return
+
         if event.button() == Qt.MouseButton.LeftButton:
             self._drag_start = event.globalPosition().toPoint()
             self._window_start = self.pos()
