@@ -257,6 +257,10 @@ class SimpleDictationApp:
         config.set("clipboard_cycling", self.clipboard_cycling)
         logger.info("Clipboard cycling: %s", self.clipboard_cycling)
 
+    def show_overlay(self):
+        if self.overlay:
+            self.overlay.show()
+
     def toggle_enabled(self):
         self.enabled = not self.enabled
         if not self.enabled and self._recording:

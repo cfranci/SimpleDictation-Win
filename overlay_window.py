@@ -142,7 +142,7 @@ class FloatingMicOverlay(QWidget):
             self.hide()
             return
         if abs(pos.x() - (PILL_WIDTH - 14)) < 12 and abs(pos.y() - mid_y) < 12:
-            QApplication.quit()
+            self.hide()
             return
 
         if event.button() == Qt.MouseButton.LeftButton:
