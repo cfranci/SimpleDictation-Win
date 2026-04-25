@@ -25,13 +25,10 @@ echo Installing dependencies...
 pip install -r requirements.txt --quiet
 pip install pyinstaller --quiet
 
-REM Build .exe
+REM Build .exe using the spec file (includes all local modules)
 echo.
 echo Building SimpleDictation.exe...
-pyinstaller --onefile --noconsole --name SimpleDictation ^
-    --icon=icon.ico ^
-    --add-data "requirements.txt;." ^
-    main.py
+pyinstaller SimpleDictation.spec --noconfirm
 
 echo.
 if exist "dist\SimpleDictation.exe" (

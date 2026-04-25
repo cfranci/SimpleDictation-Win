@@ -26,13 +26,14 @@ def _create_icon_image(recording: bool = False, enabled: bool = True) -> Image.I
         draw.line([cx, cy+mic_h//2+2, cx, cy+mic_h//2+5], fill=(255, 255, 255, 255), width=2)
         draw.line([cx-5, cy+mic_h//2+5, cx+5, cy+mic_h//2+5], fill=(255, 255, 255, 255), width=2)
     else:
-        draw.ellipse([cx-r, cy-r, cx+r, cy+r], fill=(220, 40, 40, 255))
+        draw.ellipse([cx-r, cy-r, cx+r, cy+r], outline=(200, 200, 200, 255), width=3)
         mic_w, mic_h = 10, 16
-        draw.rounded_rectangle([cx-mic_w//2, cy-mic_h//2+2, cx+mic_w//2, cy+mic_h//2+2], radius=4, fill=(255, 255, 255, 255))
+        mic_color = (200, 200, 200, 255)
+        draw.rounded_rectangle([cx-mic_w//2, cy-mic_h//2+2, cx+mic_w//2, cy+mic_h//2+2], radius=4, fill=mic_color)
         arc_box = [cx-8, cy-8, cx+8, cy+8]
-        draw.arc(arc_box, 200*16, 340*16, fill=(255, 255, 255, 255), width=2)
-        draw.line([cx, cy+mic_h//2+2, cx, cy+mic_h//2+5], fill=(255, 255, 255, 255), width=2)
-        draw.line([cx-5, cy+mic_h//2+5, cx+5, cy+mic_h//2+5], fill=(255, 255, 255, 255), width=2)
+        draw.arc(arc_box, 200*16, 340*16, fill=mic_color, width=2)
+        draw.line([cx, cy+mic_h//2+2, cx, cy+mic_h//2+5], fill=mic_color, width=2)
+        draw.line([cx-5, cy+mic_h//2+5, cx+5, cy+mic_h//2+5], fill=mic_color, width=2)
 
     return img
 
@@ -83,7 +84,7 @@ class TrayController:
             for label, key in hotkeys:
                 hotkey_items.append(MenuItem(
                     label,
-                    lambda _, k=key: self.app.set_hotkey(key),
+                    lambda _, k=key: self.app.set_hotkey(k),
                     checked=lambda item, k=key: self.app.current_hotkey == k,
                 ))
 
@@ -91,7 +92,7 @@ class TrayController:
             for label, code in languages:
                 lang_items.append(MenuItem(
                     label,
-                    lambda _, c=code: self.app.set_language(code),
+                    lambda _, c=code: self.app.set_language(c),
                     checked=lambda item, c=code: self.app.current_language == code,
                 ))
 
