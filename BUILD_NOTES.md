@@ -1,5 +1,16 @@
 # SimpleDictation-Win Build Notes
 
+## How to Run
+
+### Quick Start
+1. Double-click **SimpleDictation** on your desktop
+2. Or run in terminal: `cd C:\Users\lucyg\OneDrive\Documents\Apps\SimpleDictation-Win` then `py main.py`
+
+### Using the App
+- Hold **Left Ctrl** to record
+- Release to transcribe and paste text
+- Right-click tray icon for settings
+
 ## Current Issue: ModuleNotFoundError when running built .exe
 
 When running the built `.exe` from `dist/SimpleDictation.exe`:
