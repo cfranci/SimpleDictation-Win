@@ -18,6 +18,7 @@ MODELS = {
     "faster-whisper-small": {"size": "small", "label": "Whisper Small (~460MB)"},
     "faster-whisper-medium": {"size": "medium", "label": "Whisper Medium (~1.5GB)"},
     "faster-whisper-large-v3": {"size": "large-v3", "label": "Distil-Whisper Large v3 (~594MB)"},
+    "faster-whisper-large-v3-turbo": {"size": "large-v3-turbo", "label": "Whisper Large v3 Turbo"},
 }
 
 # Known silence hallucinations (same list as macOS)
